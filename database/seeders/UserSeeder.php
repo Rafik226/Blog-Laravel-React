@@ -26,8 +26,10 @@ class UserSeeder extends Seeder
         // Créer un admin
         $admin = User::factory()->create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'email' => 'admin@blog.com',
             'password' => Hash::make('password'),
+            'is_admin' => true,
+            'is_active' => true,
         ]);
 
         Profile::factory()->create([
