@@ -15,43 +15,78 @@ class PostController extends Controller
     /**
      * Afficher la liste des articles
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['user', 'category', 'tags'])
-            ->when(request('search'), function($query, $search) {
-                return $query->where('title', 'like', "%{$search}%")
-                    ->orWhere('content', 'like', "%{$search}%");
-            })
-            ->when(request('category'), function($query, $category) {
-                return $query->whereHas('category', function($q) use ($category) {
-                    $q->where('slug', $category);
+        // Récupérer les paramètres de filtre
+        $search = $request->input('search');
+        $categorySlug = $request->input('category');
+        $tagSlug = $request->input('tag');
+        $perPage = 9; // Nombre d'articles par page
+    
+        // Construire la requête avec les filtres
+        $query = Post::with(['user', 'category', 'tags', 'comments'])
+            ->when($search, function($query, $search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('content', 'like', "%{$search}%");
                 });
             })
-            ->when(request('tag'), function($query, $tag) {
-                return $query->whereHas('tags', function($q) use ($tag) {
-                    $q->where('slug', $tag);
+            ->when($categorySlug, function($query, $categorySlug) {
+                return $query->whereHas('category', function($q) use ($categorySlug) {
+                    $q->where('slug', $categorySlug);
                 });
             })
-            ->when(!Auth::check() || !Auth::user()->is_admin, function($query) {
-                return $query->where('published', true);
-            })
-            ->latest()
-            ->paginate(10);
-
+            ->when($tagSlug, function($query, $tagSlug) {
+                return $query->whereHas('tags', function($q) use ($tagSlug) {
+                    $q->where('slug', $tagSlug);
+                });
+            });
+            
+    
+        // Filtrer les articles non publiés pour les non-administrateurs
+        if (!Auth::check() || !Auth::user()->is_admin) {
+            $query->where('published', true);
+        }
+    
+        // Récupérer les articles paginés
+        $paginatedPosts = $query->latest()->paginate($perPage);
+    
+        // Récupérer les catégories pour la sidebar
+        $categories = Category::withCount(['posts' => function($query) {
+            if (!Auth::check() || !Auth::user()->is_admin) {
+                $query->where('published', true);
+            }
+        }])->orderBy('name')->get();
+    
+        // Renvoyer la vue avec les données explicitement structurées
         return Inertia::render('Posts/Index', [
-            'posts' => $posts,
+            'posts' => [
+                'data' => $paginatedPosts->items(),
+                'meta' => [
+                    'current_page' => $paginatedPosts->currentPage(),
+                    'last_page' => $paginatedPosts->lastPage(),
+                    'per_page' => $paginatedPosts->perPage(),
+                    'total' => $paginatedPosts->total(),
+                    'links' => $paginatedPosts->linkCollection()->toArray()
+                ]
+            ],
+            'categories' => $categories,
+            'filters' => [
+                'search' => $search,
+                'category' => $categorySlug,
+                'tag' => $tagSlug
+            ]
         ]);
     }
+    
 
     /**
      * Afficher le formulaire de création d'un article
      */
     public function create()
     {
-        $this->authorize('create', Post::class);
-
-        $categories = Category::all();
-        $tags = Tag::all();
+        $categories = Category::orderBy('name')->get();
+        $tags = Tag::orderBy('name')->get();
 
         return Inertia::render('Posts/Create', [
             'categories' => $categories,
@@ -103,23 +138,47 @@ class PostController extends Controller
     /**
      * Afficher un article spécifique
      */
-    public function show(Post $post)
+    public function show(Post $post, Request $request)
     {
-        // Si l'article n'est pas publié et que l'utilisateur n'est pas l'auteur ou admin
-        if (!$post->published && (!Auth::check() || Auth::id() !== $post->user_id && !Auth::user()->is_admin)) {
-            abort(404);
-        }
-
-        $post->load(['user.profile', 'category', 'tags', 'comments' => function ($query) {
-            $query->where('approved', true)->latest();
+        // Chargement des relations
+        $post->load(['user', 'category', 'tags', 'comments' => function($query) {
+            $query->where('approved', true)->with('user');
         }]);
-
-        // Incrémenter le compteur de vues (exemple simple)
-        // Dans un cas réel, vous voudriez gérer cela avec une table dédiée pour éviter les doublons
-
+        
+        // Enregistrement de la vue si l'utilisateur n'est pas l'auteur
+        if (!Auth::check() || Auth::id() !== $post->user_id) {
+            $userId = Auth::id();
+            $ipAddress = $request->ip();
+            $userAgent = $request->userAgent();
+            
+            $post->incrementViews($userId, $ipAddress, $userAgent);
+        }
+        
+        // Articles connexes
+        $relatedPosts = Post::where('id', '!=', $post->id)
+            ->where('published', true)
+            ->where(function($query) use ($post) {
+                // Même catégorie ou mêmes tags
+                if ($post->category_id) {
+                    $query->where('category_id', $post->category_id);
+                }
+                if ($post->tags->count() > 0) {
+                    $tagIds = $post->tags->pluck('id');
+                    $query->orWhereHas('tags', function($q) use ($tagIds) {
+                        $q->whereIn('tags.id', $tagIds);
+                    });
+                }
+            })
+            ->with(['user', 'category'])
+            ->withCount('views')
+            ->inRandomOrder()
+            ->limit(3)
+            ->get();
+            
         return Inertia::render('Posts/Show', [
             'post' => $post,
-            'relatedPosts' => $this->getRelatedPosts($post),
+            'related_posts' => $relatedPosts,
+            'comments' => $post->comments,
         ]);
     }
 
@@ -203,21 +262,27 @@ class PostController extends Controller
     }
 
     /**
-     * Obtenir les articles connexes basés sur la catégorie et les tags
+     * Afficher la liste des brouillons de l'utilisateur connecté
      */
-    private function getRelatedPosts(Post $post)
+    public function drafts()
     {
-        return Post::where('id', '!=', $post->id)
-            ->where('published', true)
-            ->where(function($query) use ($post) {
-                $query->where('category_id', $post->category_id)
-                    ->orWhereHas('tags', function($q) use ($post) {
-                        $q->whereIn('id', $post->tags->pluck('id'));
-                    });
-            })
-            ->with(['user', 'category'])
+        $drafts = Post::where('user_id', Auth::id())
+            ->where('published', false)
+            ->with(['category', 'tags'])
             ->latest()
-            ->take(3)
-            ->get();
+            ->paginate(9);
+        
+        return Inertia::render('Posts/Drafts', [
+            'posts' => [
+                'data' => $drafts->items(),
+                'meta' => [
+                    'current_page' => $drafts->currentPage(),
+                    'last_page' => $drafts->lastPage(),
+                    'per_page' => $drafts->perPage(),
+                    'total' => $drafts->total(),
+                    'links' => $drafts->linkCollection()->toArray()
+                ]
+            ]
+        ]);
     }
 }

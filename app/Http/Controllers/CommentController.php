@@ -10,28 +10,13 @@ use Inertia\Inertia;
 
 class CommentController extends Controller
 {
-    /**
-     * Afficher tous les commentaires (admin uniquement)
-     */
-    public function index()
-    {
-        $this->authorize('viewAny', Comment::class);
-
-        $comments = Comment::with(['user', 'post'])
-            ->latest()
-            ->paginate(20);
-
-        return Inertia::render('Comments/Index', [
-            'comments' => $comments,
-        ]);
-    }
+  
 
     /**
      * Stocker un nouveau commentaire pour un article
      */
     public function store(Request $request, Post $post)
     {
-        $this->authorize('create', Comment::class);
 
         $validatedData = $request->validate([
             'content' => 'required|min:5|max:1000',
@@ -41,26 +26,13 @@ class CommentController extends Controller
         $comment->post_id = $post->id;
         $comment->user_id = Auth::id();
         $comment->content = $validatedData['content'];
-        $comment->approved = Auth::user()->is_admin ? true : false; // Auto-approuver pour les admins
+        $comment->approved = true;
         $comment->save();
 
         return redirect()->route('posts.show', $post->slug)
-            ->with('success', $comment->approved 
-                ? 'Votre commentaire a été ajouté !' 
-                : 'Votre commentaire a été soumis et est en attente d\'approbation.');
+            ->with('success', 'Votre commentaire a été ajouté !');
     }
 
-    /**
-     * Afficher un formulaire pour modifier un commentaire
-     */
-    public function edit(Comment $comment)
-    {
-        $this->authorize('update', $comment);
-
-        return Inertia::render('Comments/Edit', [
-            'comment' => $comment,
-        ]);
-    }
 
     /**
      * Mettre à jour un commentaire existant

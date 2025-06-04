@@ -9,6 +9,8 @@ use App\Models\Category;
 use App\Observers\CategoryObserver;
 use App\Models\Tag;
 use App\Observers\TagObserver;
+use App\Models\View;
+use App\Observers\ViewObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,5 +30,6 @@ class AppServiceProvider extends ServiceProvider
         Post::Observe(PostObserver::class);
         Category::Observe(CategoryObserver::class);
         Tag::Observe(TagObserver::class);
+        View::Observe(ViewObserver::class);
     }
 }

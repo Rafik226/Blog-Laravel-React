@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+  <g clip-path="url(#clip0_123_456)">
+    <path d="M400 500C511.046 500 600 411.046 600 300C600 188.954 511.046 100 400 100C288.954 100 200 188.954 200 300C200 411.046 288.954 500 400 500Z" fill="#F3F4F6"/>
+    <rect x="300" y="200" width="300" height="200" rx="8" fill="white" stroke="#D1D5DB" stroke-width="2"/>
+    <rect x="330" y="230" width="240" height="16" rx="2" fill="#6366F1"/>
+    <rect x="330" y="260" width="200" height="8" rx="2" fill="#9CA3AF"/>
+    <rect x="330" y="280" width="180" height="8" rx="2" fill="#9CA3AF"/>
+    <rect x="330" y="300" width="240" height="8" rx="2" fill="#9CA3AF"/>
+    <rect x="330" y="320" width="120" height="8" rx="2" fill="#9CA3AF"/>
+    <rect x="330" y="350" width="80" height="30" rx="4" fill="#6366F1"/>
+    <circle cx="450" cy="435" r="15" fill="#6366F1"/>
+    <path d="M300 435H400M500 435H600" stroke="#D1D5DB" stroke-width="2"/>
+    <path d="M150 250C150 238.954 158.954 230 170 230H220C231.046 230 240 238.954 240 250V270C240 281.046 231.046 290 220 290H170C158.954 290 150 281.046 150 270V250Z" fill="#6366F1"/>
+    <rect x="560" y="160" width="80" height="80" rx="8" fill="#6366F1" fill-opacity="0.2"/>
+    <path d="M650 400C650 388.954 658.954 380 670 380H710C721.046 380 730 388.954 730 400V430C730 441.046 721.046 450 710 450H670C658.954 450 650 441.046 650 430V400Z" fill="#6366F1" fill-opacity="0.2"/>
+    <circle cx="200" cy="400" r="40" fill="#6366F1" fill-opacity="0.2"/>
+    <circle cx="680" cy="250" r="25" fill="#6366F1" fill-opacity="0.2"/>
+  </g>
+  <defs>
+    <clipPath id="clip0_123_456">
+      <rect width="800" height="600" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>

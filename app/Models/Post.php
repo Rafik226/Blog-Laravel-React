@@ -56,4 +56,40 @@ class Post extends Model
     {
         return 'slug';
     }
+
+    
+    /**
+     * Récupère les vues associées à ce post.
+     */
+    public function views()
+    {
+        return $this->hasMany(View::class);
+    }
+    
+    /**
+     * Incrémente le compteur de vues de cet article.
+     *
+     * @param int|null $userId
+     * @param string|null $ipAddress
+     * @return bool
+     */
+    public function incrementViews($userId = null, $ipAddress = null, $userAgent = null)
+    {
+        // Vérifier si cette vue a déjà été comptabilisée aujourd'hui
+        if (View::existsForVisitor($this->id, $ipAddress, $userId)) {
+            return false;
+        }
+    
+        // Créer une nouvelle vue
+        $this->views()->create([
+            'user_id' => $userId,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent
+        ]);
+    
+        // Incrémenter le compteur de vues dans le post
+        $this->increment('views_count');
+    
+        return true;
+    }
 }

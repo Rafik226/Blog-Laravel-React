@@ -4,11 +4,19 @@ import { type User } from '@/types';
 
 export function UserInfo({ user, showEmail = false }: { user: User; showEmail?: boolean }) {
     const getInitials = useInitials();
+    
+    // Vérifier si l'utilisateur existe pour éviter les erreurs
+    if (!user) {
+        return null;
+    }
 
     return (
         <>
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                {/* Utilisez une condition pour vérifier si l'avatar existe */}
+                {user.avatar ? (
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                ) : null}
                 <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                     {getInitials(user.name)}
                 </AvatarFallback>

@@ -62,13 +62,22 @@ class CategoryController extends Controller
     {
         $posts = $category->posts()
             ->with(['user', 'tags'])
+            ->withCount(['comments' => function ($query) {
+                $query->where('approved', true);
+            }])
             ->where('published', true)
             ->latest()
             ->paginate(10);
-
+    
+        // Récupérer les autres catégories pour la sidebar
+        $other_categories = Category::where('id', '!=', $category->id)
+            ->withCount('posts')
+            ->get();
+    
         return Inertia::render('Categories/Show', [
             'category' => $category,
             'posts' => $posts,
+            'other_categories' => $other_categories,
         ]);
     }
 

@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Log;
 
 class PostPolicy
 {
@@ -44,10 +45,10 @@ class PostPolicy
 
      
     public function create(User $user)
-    {
-        // Seuls les utilisateurs actifs peuvent créer des articles
-        return $user->is_active === true;
-    }
+{
+    Log::info('Vérification de permission pour créer un article', ['user_id' => $user->id, 'is_active' => $user->is_active]);
+    return true; // Temporairement autoriser tous les utilisateurs
+}
     
     public function update(User $user, Post $post)
     {

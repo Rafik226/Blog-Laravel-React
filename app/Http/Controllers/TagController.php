@@ -11,12 +11,20 @@ class TagController extends Controller
     /**
      * Afficher la liste des tags
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tags = Tag::withCount('posts')->get();
-
+        $search = $request->input('search');
+        $query = Tag::withCount('posts');
+        
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+        
+        $tags = $query->orderBy('name')->get();
+        
         return Inertia::render('Tags/Index', [
             'tags' => $tags,
+            'filters' => ['search' => $search]
         ]);
     }
     
@@ -56,15 +64,27 @@ class TagController extends Controller
      */
     public function show(Tag $tag)
     {
-        $posts = $tag->posts()
-            ->with(['user', 'category'])
+        $paginatedPosts = $tag->posts()
+            ->with(['user', 'category', 'tags', 'comments' => function ($query) {
+                $query->where('approved', true);
+            }])
             ->where('published', true)
             ->latest()
-            ->paginate(10);
-
+            ->paginate(9); // Nombre d'articles par page
+    
+        // Structure simplifiée et explicite
         return Inertia::render('Tags/Show', [
             'tag' => $tag,
-            'posts' => $posts,
+            'posts' => [
+                'data' => $paginatedPosts->items(),
+                'pagination' => [
+                    'current_page' => $paginatedPosts->currentPage(),
+                    'last_page' => $paginatedPosts->lastPage(),
+                    'per_page' => $paginatedPosts->perPage(),
+                    'total' => $paginatedPosts->total(),
+                    'links' => $paginatedPosts->linkCollection()->toArray()
+                ]
+            ]
         ]);
     }
 

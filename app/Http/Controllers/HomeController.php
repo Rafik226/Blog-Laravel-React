@@ -55,7 +55,7 @@ class HomeController extends Controller
      */
     public function about()
     {
-        return Inertia::render('About');
+        return Inertia::render('about');
     }
     
     /**
@@ -63,7 +63,7 @@ class HomeController extends Controller
      */
     public function contact()
     {
-        return Inertia::render('Contact');
+        return Inertia::render('contact');
     }
 
     /**
