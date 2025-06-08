@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/layouts/app-layout';
 import { Tag } from '@/types';
-import { PlusIcon, TagIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TagIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface TagsIndexProps {
   tags: Tag[];
@@ -39,21 +39,46 @@ const itemVariants = {
 };
 
 export default function TagsIndex({ tags, auth, filters = {} }: TagsIndexProps) {
-  // État pour la barre de recherche
-  const [searchQuery, setSearchQuery] = useState(filters.search || '');
+  // États pour la barre de recherche dynamique
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search || '');
+  const [isSearching, setIsSearching] = useState(false);
   
   const isAuthenticated = auth?.user !== null;
   const isAdmin = auth?.user?.is_admin === true;
 
-  // Gérer la soumission de la recherche
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.get(route('tags.index'), { search: searchQuery }, {
-      preserveState: true,
-      preserveScroll: true,
-      only: ['tags']
-    });
-  };
+  // Debouncing pour la recherche (300ms de délai)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setIsSearching(false);
+    }, 300);
+
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    }
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
+
+  // Filtrage local des tags
+  const filteredTags = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) {
+      return tags;
+    }
+
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    return tags.filter(tag => 
+      tag.name.toLowerCase().includes(searchLower)
+    );
+  }, [tags, debouncedSearchTerm]);
+
+  // Fonction pour effacer la recherche
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setIsSearching(false);
+  }, []);
 
   // Générer une couleur semi-aléatoire mais cohérente pour chaque tag
   const getTagColor = (name: string) => {
@@ -106,68 +131,79 @@ export default function TagsIndex({ tags, auth, filters = {} }: TagsIndexProps) 
       {/* Content Section */}
       <div className="bg-white dark:bg-gray-900 py-8 pb-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Filtres et recherche */}
-            <div className="mb-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <span className="text-gray-500 dark:text-gray-400">
-                  {tags.length} tag{tags.length !== 1 ? 's' : ''}
+          <div className="max-w-4xl mx-auto">            {/* Filtres et recherche */}            <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <span className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+                  {filteredTags.length} tag{filteredTags.length !== 1 ? 's' : ''}
+                  {debouncedSearchTerm && (
+                    <span className="ml-2 text-primary">
+                      (sur {tags.length} total{tags.length !== 1 ? 's' : ''})
+                    </span>
+                  )}
                 </span>
-                {filters.search && (
-                  <div className="ml-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded text-xs flex items-center">
-                    Recherche: "{filters.search}"
+                {debouncedSearchTerm && (
+                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm flex items-center w-fit">
+                    <MagnifyingGlassIcon className="w-4 h-4 mr-1" />
+                    <span className="truncate max-w-[150px] sm:max-w-none">Recherche: "{debouncedSearchTerm}"</span>
                     <button 
-                      onClick={() => router.get(route('tags.index'))} 
-                      className="ml-1 text-blue-500 hover:text-blue-700"
+                      onClick={clearSearch}
+                      className="ml-2 text-primary hover:text-primary/70"
                     >
-                      ×
+                      <XMarkIcon className="w-4 h-4" />
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Barre de recherche */}
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                <form onSubmit={handleSearch} className="relative flex-grow sm:w-64">
+              {/* Barre de recherche dynamique */}
+              <div className="flex items-center space-x-2 w-full lg:w-auto">
+                <div className="relative flex-grow lg:w-64">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                  </div>
                   <input
                     type="text"
                     placeholder="Rechercher un tag..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 pr-8 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white transition-colors"
                   />
-                  <button 
-                    type="submit" 
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
-                  >
-                    <svg className="w-4 h-4 text-gray-400 hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                  </button>
-                </form>
-                
-                {/* Bouton pour créer un tag (admin uniquement) */}
+                  {(searchTerm || isSearching) && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {isSearching ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                      ) : searchTerm ? (
+                        <button
+                          onClick={clearSearch}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                  {/* Bouton pour créer un tag (admin uniquement) */}
                 {isAdmin && (
                   <Link
-                    href={route('tags.create')}
-                    className="inline-flex items-center px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                    href={route('admin.tags.create')}
+                    className="inline-flex items-center justify-center px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap min-w-[100px] sm:min-w-auto"
                   >
-                    <PlusIcon className="w-4 h-4 mr-1" />
-                    <span>Nouveau</span>
+                    <PlusIcon className="w-4 h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Nouveau</span>
+                    <span className="sm:hidden">+</span>
                   </Link>
                 )}
               </div>
-            </div>
-
-            {/* Liste des tags */}
-            {tags && tags.length > 0 ? (
+            </div>            {/* Liste des tags */}
+            {filteredTags && filteredTags.length > 0 ? (
               <motion.div 
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
               >
-                {tags.map((tag) => (
+                {filteredTags.map((tag) => (
                   <motion.div
                     key={tag.id}
                     variants={itemVariants}
@@ -189,7 +225,7 @@ export default function TagsIndex({ tags, auth, filters = {} }: TagsIndexProps) 
                     {isAdmin && (
                       <div className="mt-1 flex justify-end space-x-2 text-xs">
                         <Link 
-                          href={route('tags.edit', tag.slug)} 
+                          href={route('admin.tags.edit', tag.slug)} 
                           className="text-blue-500 hover:text-blue-600"
                         >
                           Modifier
@@ -211,28 +247,35 @@ export default function TagsIndex({ tags, auth, filters = {} }: TagsIndexProps) 
               </motion.div>
             ) : (
               <div className="py-20 text-center">
-                <TagIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  {filters.search 
-                    ? `Aucun tag ne correspond à votre recherche "${filters.search}".` 
-                    : "Aucun tag disponible pour le moment."}
+                <div className="mx-auto mb-4">
+                  {isSearching ? (
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                  ) : (
+                    <TagIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600" />
+                  )}
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  {isSearching ? "Recherche en cours..." :
+                    debouncedSearchTerm 
+                      ? `Aucun tag ne correspond à votre recherche "${debouncedSearchTerm}".` 
+                      : "Aucun tag disponible pour le moment."
+                  }
                 </p>
-                {filters.search && (
+                {debouncedSearchTerm && !isSearching && (
                   <button 
-                    onClick={() => router.get(route('tags.index'))}
-                    className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                    onClick={clearSearch}
+                    className="mb-4 px-4 py-2 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
                   >
-                    Réinitialiser la recherche
+                    Effacer la recherche
                   </button>
                 )}
-                
-                {isAdmin && !filters.search && (
+                  {isAdmin && !debouncedSearchTerm && !isSearching && (
                   <Link
                     href={route('tags.create')}
-                    className="mt-4 inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors min-w-[180px] sm:min-w-auto"
                   >
                     <PlusIcon className="w-4 h-4 mr-2" />
-                    Créer le premier tag
+                    <span className="whitespace-nowrap">Créer le premier tag</span>
                   </Link>
                 )}
               </div>

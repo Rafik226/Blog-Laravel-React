@@ -17,17 +17,17 @@ class DashboardController extends Controller
         // Filtrage par utilisateur si ce n'est pas un admin
         $userFilter = Auth::user()->is_admin ? [] : ['user_id' => Auth::id()];
         
-        // Récupérer les statistiques pour le dashboard
+        // Récupérer les statistiques pour le dashboard utilisateur
         $stats = [
-            'totalPosts' => Post::where($userFilter)->count(),
-            'totalViews' => Post::where($userFilter)->sum('views_count'),
-            'totalComments' => Comment::when(!Auth::user()->is_admin, function($query) {
+            'myPosts' => Post::where($userFilter)->count(),
+            'myViews' => Post::where($userFilter)->sum('views_count'),
+            'myComments' => Comment::when(!Auth::user()->is_admin, function($query) {
                 return $query->whereHas('post', function($q) {
                     $q->where('user_id', Auth::id());
                 });
             })->count(),
-            'totalUsers' => Auth::user()->is_admin ? User::count() : 1,
-            'categories' => $this->getTopCategories($userFilter),
+            'drafts' => Post::where($userFilter)->where('published', false)->count(),
+            'favoriteCategories' => $this->getTopCategories($userFilter),
             'recentPosts' => $this->getRecentPosts($userFilter),
             'activity' => $this->getWeeklyActivity()
         ];

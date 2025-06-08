@@ -1,22 +1,40 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { BarChart3, TrendingUp, Calendar, Eye } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, Eye, Users, MessageSquare, Award, Activity, User, FileText, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { 
+  DailyView, 
+  TopPost, 
+  ViewStats, 
+  CategoryStat, 
+  AuthorStat, 
+  CommentsStats, 
+  MonthlyStats, 
+  RecentActivity 
+} from '@/types';
 
 interface ViewStatsProps {
-  dailyViews: { date: string; count: number }[];
-  topPosts: {
-    id: number;
-    title: string;
-    slug: string;
-    author: string;
-    views: number;
-  }[];
+  dailyViews: DailyView[];
+  topPosts: TopPost[];
+  stats: ViewStats;
+  categoryStats: CategoryStat[];
+  recentActivity: RecentActivity[];
+  commentsStats: CommentsStats;
+  topAuthors: AuthorStat[];
+  monthlyStats: MonthlyStats[];
 }
 
-export default function ViewStats({ dailyViews, topPosts }: ViewStatsProps) {
-  // Fonction pour calculer la hauteur maximale des barres
+export default function ViewStats({ 
+  dailyViews, 
+  topPosts, 
+  stats, 
+  categoryStats, 
+  recentActivity, 
+  commentsStats, 
+  topAuthors, 
+  monthlyStats 
+}: ViewStatsProps) {  // Fonction pour calculer la hauteur maximale des barres
   const getMaxViewHeight = () => {
     if (!dailyViews || dailyViews.length === 0) return 100;
     const maxViews = Math.max(...dailyViews.map(day => day.count));
@@ -32,6 +50,17 @@ export default function ViewStats({ dailyViews, topPosts }: ViewStatsProps) {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   };
 
+  // Fonction pour formater les nombres
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+  };
+
   const maxViewCount = getMaxViewHeight();
 
   return (
@@ -41,15 +70,78 @@ export default function ViewStats({ dailyViews, topPosts }: ViewStatsProps) {
       <div className="p-3 sm:p-4 lg:p-6">
         {/* Header responsive */}
         <div className="mb-4 sm:mb-6 flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-          <h1 className="text-xl sm:text-2xl font-bold">Statistiques de vues</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Statistiques complètes</h1>
           <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Derniers 30 jours</span>
           </div>
         </div>
+
+        {/* Cartes de statistiques principales */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2">
+                <Eye className="h-4 w-4 text-blue-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Vues totales</p>
+                  <p className="text-lg sm:text-xl font-bold">{formatNumber(stats.totalViews)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4 text-green-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Visiteurs uniques</p>
+                  <p className="text-lg sm:text-xl font-bold">{formatNumber(stats.uniqueVisitors)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2">
+                <FileText className="h-4 w-4 text-purple-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Articles publiés</p>
+                  <p className="text-lg sm:text-xl font-bold">{stats.totalPosts}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2">
+                <Target className="h-4 w-4 text-orange-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Vues/Article</p>
+                  <p className="text-lg sm:text-xl font-bold">{stats.avgViewsPerPost}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-indigo-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Auteurs actifs</p>
+                  <p className="text-lg sm:text-xl font-bold">{stats.totalAuthors}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Grid responsive - 1 colonne sur mobile, 2 sur desktop */}
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2 mb-6">
           {/* Graphique des vues quotidiennes */}
           <Card className="col-span-1">
             <CardHeader className="pb-2 sm:pb-4">
@@ -147,6 +239,64 @@ export default function ViewStats({ dailyViews, topPosts }: ViewStatsProps) {
             </CardContent>
           </Card>
 
+          {/* Statistiques des commentaires */}
+          <Card className="col-span-1">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <MessageSquare className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                Engagement des utilisateurs
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Statistiques des commentaires et interactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-green-600">{commentsStats.approved}</p>
+                  <p className="text-xs text-green-600">Commentaires approuvés</p>
+                </div>
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-yellow-600">{commentsStats.pending}</p>
+                  <p className="text-xs text-yellow-600">En attente</p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-600">{commentsStats.recent}</p>
+                  <p className="text-xs text-blue-600">Cette semaine</p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-purple-600">{commentsStats.total}</p>
+                  <p className="text-xs text-purple-600">Total</p>
+                </div>
+              </div>
+              
+              {/* Ratio d'engagement */}
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs text-gray-500">Taux d'approbation</span>
+                  <span className="text-xs font-medium">
+                    {commentsStats.total > 0 
+                      ? Math.round((commentsStats.approved / commentsStats.total) * 100) 
+                      : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                    style={{ 
+                      width: `${commentsStats.total > 0 
+                        ? (commentsStats.approved / commentsStats.total) * 100 
+                        : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Nouvelle rangée pour top posts et catégories */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2 mb-6">
           {/* Top articles consultés */}
           <Card className="col-span-1">
             <CardHeader className="pb-2 sm:pb-4">
@@ -194,6 +344,144 @@ export default function ViewStats({ dailyViews, topPosts }: ViewStatsProps) {
                     <TrendingUp className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-500">Aucun article populaire</p>
                     <p className="text-xs text-gray-400 mt-1">Les articles apparaîtront après avoir reçu des vues</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Performance par catégorie */}
+          <Card className="col-span-1">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Award className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                Performance par catégorie
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Catégories les plus consultées
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6">
+              {categoryStats && categoryStats.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {categoryStats.map((category, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{category.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {category.posts_count} articles • {category.avg_views} vues/article
+                        </p>
+                      </div>
+                      <div className="ml-2 text-right">
+                        <p className="font-bold text-sm">{formatNumber(category.total_views)}</p>
+                        <p className="text-xs text-gray-500">vues</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-48 items-center justify-center">
+                  <div className="text-center">
+                    <Award className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">Aucune donnée disponible</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top auteurs */}
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
+          <Card className="col-span-1">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Users className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                Auteurs les plus lus
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Classement des auteurs par nombre de vues
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6">
+              {topAuthors && topAuthors.length > 0 ? (
+                <div className="space-y-3">
+                  {topAuthors.map((author, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{author.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {author.posts_count} articles
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{formatNumber(author.total_views)}</p>
+                        <p className="text-xs text-gray-500">{author.avg_views} moy.</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-48 items-center justify-center">
+                  <div className="text-center">
+                    <Users className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">Aucun auteur trouvé</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Activité récente */}
+          <Card className="col-span-1">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center text-base sm:text-lg">
+                <Activity className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                Activité récente
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Vues des 7 derniers jours
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6">
+              {recentActivity && recentActivity.length > 0 ? (
+                <div className="space-y-2">
+                  {recentActivity.map((activity, index) => {
+                    const maxRecentViews = Math.max(...recentActivity.map(a => a.views_count));
+                    const widthPercentage = maxRecentViews > 0 ? (activity.views_count / maxRecentViews) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="flex items-center space-x-3">
+                        <div className="w-20 text-xs text-gray-500">
+                          {formatDate(activity.date)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${widthPercentage}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium w-12 text-right">
+                              {activity.views_count}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex h-48 items-center justify-center">
+                  <div className="text-center">
+                    <Activity className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">Aucune activité récente</p>
                   </div>
                 </div>
               )}

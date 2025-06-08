@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import NewsletterForm from '@/components/newsletter/NewsletterForm';
 
 export default function Footer() {
   return (
@@ -31,22 +32,16 @@ export default function Footer() {
               <li><Link href="#" className="text-gray-600 dark:text-gray-400 hover:text-primary">Politique de confidentialité</Link></li>
             </ul>
           </div>
-          
-          <div>
+            <div>
             <h3 className="text-lg font-bold mb-4">Newsletter</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Abonnez-vous pour recevoir les derniers articles et mises à jour.
             </p>
-            <div className="flex">
-              <input 
-                type="email" 
-                placeholder="Votre email" 
-                className="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600"
-              />
-              <button className="bg-primary text-white px-4 py-2 rounded-r-md hover:bg-primary/90">
-                S'abonner
-              </button>
-            </div>
+            <NewsletterForm 
+              compact={true}
+              placeholder="Votre email"
+              buttonText="S'abonner"
+            />
           </div>
         </div>
         

@@ -24,6 +24,7 @@ import {
   Tags, 
   Users, 
   MessageSquare,
+  Mail,
   BarChart3,
   Home,
   Eye,
@@ -136,6 +137,26 @@ export function AppSidebar() {
               icon: BarChart3 as ElementType,
             },
           ]
+        },
+        {
+          title: "Newsletter",
+          items: [
+            {
+              title: 'Abonnés',
+              href: route('admin.newsletters.index'),
+              icon: Mail as ElementType,
+            },
+            {
+              title: 'Composer',
+              href: route('admin.newsletters.compose'),
+              icon: PenLine as ElementType,
+            },
+            {
+              title: 'Paramètres',
+              href: route('admin.newsletters.settings'),
+              icon: Settings as ElementType,
+            },
+          ]
         }
       ] 
     : [];
@@ -162,11 +183,11 @@ export function AppSidebar() {
       className="custom-sidebar border-r-primary"
       style={sidebarStyle}
     >
-      <SidebarHeader className="border-b border-gray-700/50">
+      <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center justify-center p-3">
           <Link href={route('dashboard')} prefetch className="flex items-center">
             <AppLogo />
-            <span className="ml-2 text-lg font-semibold text-white group-data-[collapsible=icon]:hidden">
+            <span className="ml-2 text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
               Blog Admin
             </span>
           </Link>
@@ -178,7 +199,7 @@ export function AppSidebar() {
           <>
             {mainNavItems.map((group, groupIndex) => (
               <SidebarGroup key={groupIndex}>
-                <SidebarGroupLabel className="text-gray-400 uppercase tracking-wider text-xs font-medium">
+                <SidebarGroupLabel className="text-sidebar-foreground/90 uppercase tracking-wider text-xs font-medium">
                   {group.title}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -219,7 +240,7 @@ export function AppSidebar() {
                             {React.createElement(item.icon, { className: "w-4 h-4 mr-3" })}
                             <span>{item.title}</span>
                             {item.badge && (
-                              <span className="ml-auto bg-primary text-white text-xs px-2 py-0.5 rounded-full">
+                              <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
                                 {item.badge}
                               </span>
                             )}
@@ -235,7 +256,7 @@ export function AppSidebar() {
         )}
         {!isAuthenticated && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-gray-400 uppercase tracking-wider text-xs font-medium">
+            <SidebarGroupLabel className="text-sidebar-foreground/90 uppercase tracking-wider text-xs font-medium">
               Navigation
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -284,23 +305,17 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Section de statistiques pour les utilisateurs authentifiés */}
-        {isAuthenticated && (
-          <SidebarGroup>
-            
-           
-          </SidebarGroup>
-        )}
+       
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-700/50 pt-2">
+      <SidebarFooter className="border-t border-sidebar-border pt-2">
         {isAuthenticated ? (
           <>
             <NavFooter items={footerNavItems} className="mb-2" />
             <NavUser />
           </>
         ) : (
-          <div className="p-3 text-center text-sm text-gray-400">
+          <div className="p-3 text-center text-sm text-sidebar-foreground/90">
             <p>Connectez-vous pour accéder à toutes les fonctionnalités</p>
           </div>
         )}

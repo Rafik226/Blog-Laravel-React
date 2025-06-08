@@ -146,3 +146,56 @@ export type PaginatedCategories = PaginatedData<Category>;
 export type PaginatedTags = PaginatedData<Tag>;
 export type PaginatedComments = PaginatedData<Comment>;
 export type PaginatedUsers = PaginatedData<User>;
+
+// Types pour les statistiques étendues
+export interface ViewStats {
+    totalViews: number;
+    uniqueVisitors: number;
+    avgViewsPerPost: number;
+    totalPosts: number;
+    totalAuthors: number;
+}
+
+export interface CategoryStat {
+    name: string;
+    posts_count: number;
+    total_views: number;
+    avg_views: number;
+}
+
+export interface AuthorStat {
+    name: string;
+    posts_count: number;
+    total_views: number;
+    avg_views: number;
+}
+
+export interface DailyView {
+    date: string;
+    count: number;
+}
+
+export interface TopPost {
+    id: number;
+    title: string;
+    slug: string;
+    author: string;
+    views: number;
+}
+
+export interface CommentsStats {
+    total: number;
+    approved: number;
+    pending: number;
+    recent: number;
+}
+
+export interface MonthlyStats {
+    period: string;
+    views: number;
+}
+
+export interface RecentActivity {
+    date: string;
+    views_count: number;
+}

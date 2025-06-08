@@ -13,7 +13,8 @@ class CategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        // Tout utilisateur authentifié peut voir la liste des catégories
+        return true;
     }
 
     /**
@@ -21,7 +22,8 @@ class CategoryPolicy
      */
     public function view(User $user, Category $category): bool
     {
-        return false;
+        // Tout utilisateur authentifié peut voir une catégorie
+        return true;
     }
 
     /**
@@ -29,7 +31,8 @@ class CategoryPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        // Seuls les administrateurs peuvent créer des catégories
+        return $user->is_admin;
     }
 
     /**
@@ -37,7 +40,8 @@ class CategoryPolicy
      */
     public function update(User $user, Category $category): bool
     {
-        return false;
+        // Seuls les administrateurs peuvent modifier des catégories
+        return $user->is_admin;
     }
 
     /**
@@ -45,7 +49,9 @@ class CategoryPolicy
      */
     public function delete(User $user, Category $category): bool
     {
-        return false;
+        // Seuls les administrateurs peuvent supprimer des catégories
+        // ET la catégorie ne doit pas avoir d'articles associés
+        return $user->is_admin && $category->posts()->count() === 0;
     }
 
     /**
@@ -53,7 +59,8 @@ class CategoryPolicy
      */
     public function restore(User $user, Category $category): bool
     {
-        return false;
+        // Seuls les administrateurs peuvent restaurer
+        return $user->is_admin;
     }
 
     /**
@@ -61,6 +68,7 @@ class CategoryPolicy
      */
     public function forceDelete(User $user, Category $category): bool
     {
-        return false;
+        // Seuls les super-administrateurs peuvent supprimer définitivement
+        return $user->is_admin && $user->email === 'admin@example.com';
     }
 }

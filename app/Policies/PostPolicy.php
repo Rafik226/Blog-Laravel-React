@@ -46,7 +46,6 @@ class PostPolicy
      
     public function create(User $user)
 {
-    Log::info('Vérification de permission pour créer un article', ['user_id' => $user->id, 'is_active' => $user->is_active]);
     return true; // Temporairement autoriser tous les utilisateurs
 }
     

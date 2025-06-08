@@ -2,12 +2,99 @@ import { SVGAttributes } from 'react';
 
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
-        <svg {...props} viewBox="0 0 40 42" xmlns="http://www.w3.org/2000/svg">
-            <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M17.2 5.63325L8.6 0.855469L0 5.63325V32.1434L16.2 41.1434L32.4 32.1434V23.699L40 19.4767V9.85547L31.4 5.07769L22.8 9.85547V18.2999L17.2 21.411V5.63325ZM38 18.2999L32.4 21.411V15.2545L38 12.1434V18.2999ZM36.9409 10.4439L31.4 13.5221L25.8591 10.4439L31.4 7.36561L36.9409 10.4439ZM24.8 18.2999V12.1434L30.4 15.2545V21.411L24.8 18.2999ZM23.8 20.0323L29.3409 23.1105L16.2 30.411L10.6591 27.3328L23.8 20.0323ZM7.6 27.9212L15.2 32.1434V38.2999L2 30.9666V7.92116L7.6 11.0323V27.9212ZM8.6 9.29991L3.05913 6.22165L8.6 3.14339L14.1409 6.22165L8.6 9.29991ZM30.4 24.8101L17.2 32.1434V38.2999L30.4 30.9666V24.8101ZM9.6 11.0323L15.2 7.92117V22.5221L9.6 25.6333V11.0323Z"
+        <svg {...props} xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+            <defs>
+                {/* Gradient definitions for modern look */}
+                <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#6366f1" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                </linearGradient>
+                <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                </linearGradient>
+                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#000000" floodOpacity="0.1"/>
+                </filter>
+            </defs>
+            
+            {/* Background circle with gradient */}
+            <circle 
+                cx="60" 
+                cy="60" 
+                r="56" 
+                fill="url(#primaryGradient)" 
+                filter="url(#shadow)"
             />
+            
+            {/* Inner white circle for contrast */}
+            <circle 
+                cx="60" 
+                cy="60" 
+                r="45" 
+                fill="white" 
+                opacity="0.95"
+            />
+            
+            {/* Book/Blog icon design */}
+            <g transform="translate(30, 25)">
+                {/* Main book pages */}
+                <rect 
+                    x="8" 
+                    y="10" 
+                    width="44" 
+                    height="60" 
+                    rx="4" 
+                    fill="url(#primaryGradient)" 
+                    opacity="0.9"
+                />
+                
+                {/* Book spine highlight */}
+                <rect 
+                    x="8" 
+                    y="10" 
+                    width="6" 
+                    height="60" 
+                    rx="3" 
+                    fill="url(#accentGradient)"
+                />
+                
+                {/* Text lines representing blog content */}
+                <rect x="18" y="20" width="28" height="3" rx="1.5" fill="white" opacity="0.8" />
+                <rect x="18" y="28" width="24" height="2" rx="1" fill="white" opacity="0.6" />
+                <rect x="18" y="34" width="30" height="2" rx="1" fill="white" opacity="0.6" />
+                <rect x="18" y="40" width="20" height="2" rx="1" fill="white" opacity="0.6" />
+                
+                {/* Second section */}
+                <rect x="18" y="50" width="26" height="3" rx="1.5" fill="white" opacity="0.8" />
+                <rect x="18" y="58" width="22" height="2" rx="1" fill="white" opacity="0.6" />
+                
+                {/* Decorative pen/pencil icon */}
+                <g transform="translate(40, 45)">
+                    <rect 
+                        x="0" 
+                        y="0" 
+                        width="12" 
+                        height="3" 
+                        rx="1.5" 
+                        fill="url(#accentGradient)" 
+                        transform="rotate(45 6 1.5)"
+                    />
+                    <circle 
+                        cx="9" 
+                        cy="3" 
+                        r="1.5" 
+                        fill="url(#accentGradient)" 
+                        transform="rotate(45 6 1.5)"
+                    />
+                </g>
+            </g>
+            
+            {/* Subtle decorative dots around the logo */}
+            <circle cx="20" cy="25" r="2" fill="url(#accentGradient)" opacity="0.3" />
+            <circle cx="100" cy="35" r="1.5" fill="url(#primaryGradient)" opacity="0.4" />
+            <circle cx="15" cy="95" r="1.5" fill="url(#accentGradient)" opacity="0.3" />
+            <circle cx="105" cy="85" r="2" fill="url(#primaryGradient)" opacity="0.3" />
         </svg>
     );
 }

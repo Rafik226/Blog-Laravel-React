@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Models\Category;
 use App\Models\Tag;
+use App\Events\PostPublished;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -131,6 +132,11 @@ class PostController extends Controller
             $post->tags()->attach($validatedData['tags']);
         }
 
+        // Déclencher l'événement de publication si l'article est publié
+        if ($post->published) {
+            PostPublished::dispatch($post);
+        }
+
         return redirect()->route('posts.show', $post->slug)
             ->with('success', 'Article créé avec succès !');
     }
@@ -242,6 +248,11 @@ class PostController extends Controller
             $post->tags()->sync($validatedData['tags']);
         } else {
             $post->tags()->detach();
+        }
+
+        // Déclencher l'événement de publication si l'article vient d'être publié
+        if ($post->published && !$wasPublished) {
+            PostPublished::dispatch($post);
         }
 
         return redirect()->route('posts.show', $post->slug)

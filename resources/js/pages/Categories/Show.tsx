@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/layouts/app-layout';
 import PostCard from '@/components/blog/PostCard';
@@ -22,13 +22,6 @@ interface CategoryShowProps {
     };
   };
   other_categories: Category[];
-  auth: {
-    user: {
-      id: number;
-      name: string;
-      email: string;
-    } | null;
-  };
 }
 
 // Animation variants
@@ -49,7 +42,10 @@ const itemVariants = {
   }
 };
 
-export default function CategoryShow({ category, posts, other_categories = [], auth }: CategoryShowProps) {
+export default function CategoryShow({ category, posts, other_categories = [] }: CategoryShowProps) {
+  // Accéder aux données partagées via usePage
+  const { auth } = usePage().props as any;
+  
   // S'assurer que les données sont définies avec des valeurs par défaut
   const postsData = posts?.data || [];
   const postsMeta = posts?.meta || { total: 0, last_page: 0, links: [] };

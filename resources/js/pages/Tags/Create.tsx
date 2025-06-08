@@ -10,7 +10,7 @@ export default function CreateTag() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post(route('tags.store'));
+    post(route('admin.tags.store'));
   };
 
   return (

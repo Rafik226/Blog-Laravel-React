@@ -168,10 +168,100 @@ class AdminController extends Controller
                     'views' => $post->views_count ?? 0,
                 ];
             });
+
+        // Statistiques générales
+        $totalViews = ViewModel::count();
+        $uniqueVisitors = ViewModel::distinct('ip_address')->count('ip_address');
+        $avgViewsPerPost = Post::where('views_count', '>', 0)->avg('views_count');
+        
+        // Statistiques par catégorie
+        $categoryStats = Category::select('categories.id', 'categories.name')
+            ->withCount(['posts as published_posts_count' => function ($query) {
+                $query->where('published', true);
+            }])
+            ->withSum(['posts as total_views' => function ($query) {
+                $query->where('published', true);
+            }], 'views_count')
+            ->having('published_posts_count', '>', 0)
+            ->orderBy('total_views', 'desc')
+            ->limit(8)
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'name' => $category->name,
+                    'posts_count' => $category->published_posts_count,
+                    'total_views' => $category->total_views ?? 0,
+                    'avg_views' => $category->published_posts_count > 0 
+                        ? round(($category->total_views ?? 0) / $category->published_posts_count, 1) 
+                        : 0,
+                ];
+            });
+
+        // Activité récente (derniers 7 jours)
+        $recentActivity = ViewModel::selectRaw('DATE(created_at) as date, COUNT(*) as views_count')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->groupByRaw('DATE(created_at)')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        // Statistiques des commentaires
+        $commentsStats = [
+            'total' => Comment::count(),
+            'approved' => Comment::where('approved', true)->count(),
+            'pending' => Comment::where('approved', false)->count(),
+            'recent' => Comment::where('created_at', '>=', now()->subDays(7))->count(),
+        ];
+
+        // Top auteurs par vues
+        $topAuthors = User::select('users.id', 'users.name')
+            ->join('posts', 'users.id', '=', 'posts.user_id')
+            ->where('posts.published', true)
+            ->where('posts.views_count', '>', 0)
+            ->groupBy('users.id', 'users.name')
+            ->selectRaw('users.id, users.name, COUNT(posts.id) as posts_count, SUM(posts.views_count) as total_views')
+            ->orderBy('total_views', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($author) {
+                return [
+                    'name' => $author->name,
+                    'posts_count' => $author->posts_count,
+                    'total_views' => $author->total_views,
+                    'avg_views' => round($author->total_views / $author->posts_count, 1),
+                ];
+            });
+
+        // Données de performance mensuelle
+        $monthlyStats = ViewModel::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as views_count')
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->limit(6)
+            ->get()
+            ->map(function ($stat) {
+                return [
+                    'period' => sprintf('%04d-%02d', $stat->year, $stat->month),
+                    'views' => $stat->views_count,
+                ];
+            });
     
         return Inertia::render('admin/ViewStats', [
             'dailyViews' => $dailyViews,
-            'topPosts' => $topPosts
+            'topPosts' => $topPosts,
+            'stats' => [
+                'totalViews' => $totalViews,
+                'uniqueVisitors' => $uniqueVisitors,
+                'avgViewsPerPost' => round($avgViewsPerPost ?? 0, 1),
+                'totalPosts' => Post::where('published', true)->count(),
+                'totalAuthors' => User::whereHas('posts', function ($query) {
+                    $query->where('published', true);
+                })->count(),
+            ],
+            'categoryStats' => $categoryStats,
+            'recentActivity' => $recentActivity,
+            'commentsStats' => $commentsStats,
+            'topAuthors' => $topAuthors,
+            'monthlyStats' => $monthlyStats,
         ]);
     }
 

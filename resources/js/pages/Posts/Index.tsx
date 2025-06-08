@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/layouts/app-layout';
 import PostCard from '@/components/blog/PostCard';
 import { Post } from '@/types';
-import { LockClosedIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface PostsIndexProps {
   posts: {
@@ -57,23 +57,51 @@ const itemVariants = {
 };
 
 export default function PostsIndex({ posts, categories = [], auth, filters = {} }: PostsIndexProps) {
-  // État pour la barre de recherche
-  const [searchQuery, setSearchQuery] = useState(filters.search || '');
+  // États pour la barre de recherche dynamique
+  const [searchTerm, setSearchTerm] = useState(filters.search || '');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search || '');
+  const [isSearching, setIsSearching] = useState(false);
 
   // S'assurer que posts est défini avec des valeurs par défaut
   const postsData = posts?.data || [];
   const postsMeta = posts?.meta || { total: 0, last_page: 0, links: [] };
   const isAuthenticated = auth?.user !== null;
-  
-  // Gérer la soumission de la recherche
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.get(route('posts.index'), { search: searchQuery }, {
-      preserveState: true,
-      preserveScroll: true,
-      only: ['posts']
-    });
-  };
+
+  // Debouncing pour la recherche (300ms de délai)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setIsSearching(false);
+    }, 300);
+
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    }
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
+  // Filtrage local des articles
+  const filteredPosts = useMemo(() => {
+    if (!debouncedSearchTerm.trim()) {
+      return postsData;
+    }
+
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    return postsData.filter(post => 
+      post.title.toLowerCase().includes(searchLower) ||
+      (post.excerpt && typeof post.excerpt === 'string' && post.excerpt.toLowerCase().includes(searchLower)) ||
+      (post.content && typeof post.content === 'string' && post.content.toLowerCase().includes(searchLower)) ||
+      (post.category && post.category.name.toLowerCase().includes(searchLower)) ||
+      (post.tags && post.tags.some(tag => tag.name.toLowerCase().includes(searchLower)))
+    );
+  }, [postsData, debouncedSearchTerm]);
+
+  // Fonction pour effacer la recherche
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setIsSearching(false);
+  }, []);
   
   // Fonction qui génère un post-card modifié pour les utilisateurs non-connectés
   const renderPostCard = (post: Post) => {
@@ -166,50 +194,62 @@ export default function PostsIndex({ posts, categories = [], auth, filters = {} 
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-            >
-              {/* Filtres et recherche */}
+            >              {/* Filtres et recherche */}
               <div className="mb-8 flex flex-col sm:flex-row gap-4 justify-between items-center">
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-500 dark:text-gray-400">
-                    {postsMeta.total} article{postsMeta.total !== 1 ? 's' : ''}
+                    {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''}
+                    {debouncedSearchTerm && (
+                      <span className="ml-2 text-blue-600 dark:text-blue-400">
+                        (sur {postsData.length} total{postsData.length !== 1 ? 's' : ''})
+                      </span>
+                    )}
                   </span>
-                  {filters.search && (
-                    <div className="ml-2 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded text-xs flex items-center">
-                      Recherche: "{filters.search}"
+                  {debouncedSearchTerm && (
+                    <div className="ml-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded-full text-sm flex items-center">
+                      <MagnifyingGlassIcon className="w-4 h-4 mr-1" />
+                      Recherche: "{debouncedSearchTerm}"
                       <button 
-                        onClick={() => router.get(route('posts.index'))} 
-                        className="ml-1 text-blue-500 hover:text-blue-700"
+                        onClick={clearSearch}
+                        className="ml-2 text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
                       >
-                        ×
+                        <XMarkIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Barre de recherche accessible à tous */}
-                <form onSubmit={handleSearch} className="relative w-full sm:w-64">
+                {/* Barre de recherche dynamique */}
+                <div className="relative w-full sm:w-64">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
+                  </div>
                   <input
                     type="text"
-                    placeholder="Rechercher..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 pr-8 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    placeholder="Rechercher des articles..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white transition-colors"
                   />
-                  <button 
-                    type="submit" 
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
-                  >
-                    <svg className="w-4 h-4 text-gray-400 hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                  </button>
-                </form>
-              </div>
-
-              {/* Liste des articles */}
+                  {(searchTerm || isSearching) && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      {isSearching ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      ) : searchTerm ? (
+                        <button
+                          onClick={clearSearch}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>              {/* Liste des articles */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {postsData && postsData.length > 0 ? (
-                  postsData.map((post) => (
+                {filteredPosts && filteredPosts.length > 0 ? (
+                  filteredPosts.map((post) => (
                     <motion.div 
                       key={post.id}
                       variants={itemVariants}
@@ -220,17 +260,26 @@ export default function PostsIndex({ posts, categories = [], auth, filters = {} 
                   ))
                 ) : (
                   <div className="col-span-3 py-20 text-center">
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {filters.search 
-                        ? `Aucun article ne correspond à votre recherche "${filters.search}".` 
-                        : "Aucun article disponible pour le moment."}
+                    <div className="mx-auto mb-4">
+                      {isSearching ? (
+                        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                      ) : (
+                        <MagnifyingGlassIcon className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600" />
+                      )}
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                      {isSearching ? "Recherche en cours..." :
+                        debouncedSearchTerm 
+                          ? `Aucun article ne correspond à votre recherche "${debouncedSearchTerm}".` 
+                          : "Aucun article disponible pour le moment."
+                      }
                     </p>
-                    {filters.search && (
+                    {debouncedSearchTerm && !isSearching && (
                       <button 
-                        onClick={() => router.get(route('posts.index'))}
-                        className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
+                        onClick={clearSearch}
+                        className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                       >
-                        Réinitialiser la recherche
+                        Effacer la recherche
                       </button>
                     )}
                   </div>

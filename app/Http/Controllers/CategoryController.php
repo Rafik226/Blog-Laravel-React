@@ -60,23 +60,38 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        $posts = $category->posts()
-            ->with(['user', 'tags'])
+        $perPage = 10; // Nombre d'articles par page
+        
+        // Charger les articles avec toutes les relations nécessaires
+        $paginatedPosts = $category->posts()
+            ->with(['user', 'tags', 'category'])
             ->withCount(['comments' => function ($query) {
                 $query->where('approved', true);
             }])
             ->where('published', true)
             ->latest()
-            ->paginate(10);
+            ->paginate($perPage);
     
-        // Récupérer les autres catégories pour la sidebar
+        // Récupérer les autres catégories avec le nombre d'articles publiés
         $other_categories = Category::where('id', '!=', $category->id)
-            ->withCount('posts')
+            ->withCount(['posts' => function($query) {
+                $query->where('published', true);
+            }])
+            ->orderBy('name')
             ->get();
     
         return Inertia::render('Categories/Show', [
             'category' => $category,
-            'posts' => $posts,
+            'posts' => [
+                'data' => $paginatedPosts->items(),
+                'meta' => [
+                    'current_page' => $paginatedPosts->currentPage(),
+                    'last_page' => $paginatedPosts->lastPage(),
+                    'per_page' => $paginatedPosts->perPage(),
+                    'total' => $paginatedPosts->total(),
+                    'links' => $paginatedPosts->linkCollection()->toArray()
+                ]
+            ],
             'other_categories' => $other_categories,
         ]);
     }

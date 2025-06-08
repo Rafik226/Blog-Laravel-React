@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import PostCard from '@/components/blog/PostCard';
 import CategoryCard from '@/components/blog/CategoryCard';
 import FeaturedArticle from '@/components/blog/FeaturedArticle';
+import NewsletterForm from '@/components/newsletter/NewsletterForm';
 import { Post, Category } from '@/types';
 
 interface HomeProps {
@@ -123,25 +124,17 @@ export default function Home({ recentPosts, featuredPosts, popularCategories, po
               >
                 Découvrez les derniers articles, tutoriels, astuces et actualités tech.
               </motion.p>
-              
-              <motion.div 
+                <motion.div 
                 className="flex flex-col sm:flex-row gap-3 max-w-md"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8, duration: 0.6 }}
               >
-                <input 
-                  type="email" 
-                  placeholder="Entrez votre email" 
-                  className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
+                <NewsletterForm 
+                  compact={true}
+                  placeholder="Entrez votre email"
+                  buttonText="S'abonner"
                 />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="bg-primary text-white dark:bg-primary dark:text-white px-6 py-3 rounded-md hover:bg-primary/90 dark:hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg"
-                >
-                  S'abonner
-                </motion.button>
               </motion.div>
             </motion.div>
             
@@ -427,37 +420,18 @@ export default function Home({ recentPosts, featuredPosts, popularCategories, po
             <h2 className="text-3xl font-bold mb-6">Restez informé</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
               Abonnez-vous à notre newsletter pour recevoir nos derniers articles et mises à jour directement dans votre boîte de réception.
-            </p>
-            
-            <motion.div 
+            </p>            <motion.div 
               className="flex flex-col sm:flex-row max-w-lg mx-auto gap-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              <input 
-                type="email" 
-                placeholder="Votre adresse email" 
-                className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
+              <NewsletterForm 
+                showName={true}
+                placeholder="Votre adresse email"
+                buttonText="S'abonner à la newsletter"
               />
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors shadow-md"
-              >
-                S'abonner
-              </motion.button>
             </motion.div>
-            
-            <motion.p 
-              className="text-xs text-gray-500 dark:text-gray-400 mt-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              En vous inscrivant, vous acceptez notre politique de confidentialité.
-              Nous ne partagerons jamais votre adresse e-mail.
-            </motion.p>
           </motion.div>
         </div>
       </AnimatedSection>

@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ViewController;
@@ -79,6 +80,15 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/tags/{tag}/edit', [TagController::class, 'edit'])->name('admin.tags.edit');
     Route::put('/tags/{tag}', [TagController::class, 'update'])->name('admin.tags.update');
     Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('admin.tags.destroy');
+    
+    // Gestion de la newsletter
+    Route::get('/newsletters', [NewsletterController::class, 'index'])->name('admin.newsletters.index');
+    Route::get('/newsletters/export', [NewsletterController::class, 'export'])->name('admin.newsletters.export');
+    Route::delete('/newsletters/{newsletter}', [NewsletterController::class, 'destroy'])->name('admin.newsletters.destroy');
+    Route::get('/newsletters/compose', [NewsletterController::class, 'compose'])->name('admin.newsletters.compose');
+    Route::post('/newsletters/send', [NewsletterController::class, 'send'])->name('admin.newsletters.send');
+    Route::get('/newsletters/settings', [NewsletterController::class, 'settings'])->name('admin.newsletters.settings');
+    Route::post('/newsletters/settings', [NewsletterController::class, 'updateSettings'])->name('admin.newsletters.settings.update');
 });
 
 // Routes publiques
@@ -87,6 +97,10 @@ Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit');
 Route::get('/search', [HomeController::class, 'search'])->name('search');
+
+// Routes de la newsletter
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
 // Routes des articles (publiques)
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
