@@ -14,21 +14,31 @@ interface CreatePostProps {
   tags: Tag[];
 }
 
+// Interface pour les données du formulaire
+interface PostFormData {
+  title: string;
+  category_id: string;
+  content: string;
+  featured_image: string;
+  published: boolean;
+  tags: number[];
+  [key: string]: any; // Index signature pour Inertia
+}
+
 export default function CreatePost({ categories, tags }: CreatePostProps) {
   // État local pour l'aperçu
-  const [isPreview, setIsPreview] = useState(false);
+  const [isPreview, setIsPreview] = useState<boolean>(false);
 
-  // Formulaire Inertia
-  const { data, setData, post, processing, errors } = useForm({
+  // Formulaire Inertia avec typage explicite
+  const { data, setData, post, processing, errors } = useForm<PostFormData>({
     title: '',
     category_id: '',
     content: '',
     featured_image: '',
     published: false,
-    tags: [] as number[],
+    tags: [],
   });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     post(route('posts.store'));
   };
@@ -157,10 +167,9 @@ export default function CreatePost({ categories, tags }: CreatePostProps) {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Contenu de l'article <span className="text-red-500">*</span>
-                  </label>
-                  <RichTextEditor 
+                  </label>                  <RichTextEditor 
                     content={data.content}
-                    onChange={(html) => setData('content', html)}
+                    onChange={(html: string) => setData('content', html)}
                   />
                   {errors.content && (
                     <p className="text-red-500 text-xs mt-1">{errors.content}</p>
@@ -176,30 +185,33 @@ export default function CreatePost({ categories, tags }: CreatePostProps) {
                     Publication
                   </h3>
                   
-                  <div className="flex items-center mb-4">
-                    <input
+                  <div className="flex items-center mb-4">                    <input
                       id="published"
                       type="checkbox"
                       checked={data.published}
-                      onChange={e => setData('published', e.target.checked)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('published', e.target.checked)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
                     />
                     <label htmlFor="published" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
                       Publier immédiatement
                     </label>
                   </div>
                   
-                  <div className="flex justify-between">
-                    <button
+                  <div className="flex justify-between">                    <button
                       type="submit"
                       disabled={processing}
-                      className={`px-4 py-2 rounded-md flex items-center ${
+                      className={`px-4 py-2 rounded-md flex items-center disabled:opacity-50 disabled:cursor-not-allowed ${
                         data.published 
                           ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : 'bg-blue-600 hover:bg-blue-700 text-white'
                       }`}
                     >
-                      {data.published ? (
+                      {processing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <span>Traitement...</span>
+                        </>
+                      ) : data.published ? (
                         <>
                           <CheckCircle className="w-5 h-5 mr-1" />
                           <span>Publier</span>
@@ -219,10 +231,9 @@ export default function CreatePost({ categories, tags }: CreatePostProps) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Catégorie <span className="text-red-500">*</span>
                   </h3>
-                  
-                  <select
+                    <select
                     value={data.category_id}
-                    onChange={e => setData('category_id', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setData('category_id', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-900 dark:text-white"
                     required
                   >
@@ -243,11 +254,10 @@ export default function CreatePost({ categories, tags }: CreatePostProps) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Tags
                   </h3>
-                  
-                  <TagSelector 
+                    <TagSelector 
                     availableTags={tags}
                     selectedTags={data.tags}
-                    onChange={(selectedTags) => setData('tags', selectedTags)}
+                    onChange={(selectedTags: number[]) => setData('tags', selectedTags)}
                   />
                   {errors.tags && (
                     <p className="text-red-500 text-xs mt-1">{errors.tags}</p>
@@ -259,9 +269,8 @@ export default function CreatePost({ categories, tags }: CreatePostProps) {
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                     Image mise en avant
                   </h3>
-                  
-                  <ImageUpload
-                    onImageSelected={(imageUrl) => setData('featured_image', imageUrl)}
+                    <ImageUpload
+                    onImageSelected={(imageUrl: string) => setData('featured_image', imageUrl)}
                     defaultImage={data.featured_image}
                   />
                   {errors.featured_image && (

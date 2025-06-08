@@ -251,24 +251,35 @@ class NewsletterController extends Controller
             
             $subscribers = $query->get();
             $sentCount = 0;
+            $queuedCount = 0;
 
             foreach ($subscribers as $subscriber) {
                 try {
-                    Mail::to($subscriber->email)->send(
-                        new NewsletterMail(
-                            $validated['subject'],
-                            $validated['content'],
-                            $subscriber->unsubscribe_token
-                        )
+                    $mail = new NewsletterMail(
+                        $validated['subject'],
+                        $validated['content'],
+                        $subscriber->unsubscribe_token
                     );
-                    $sentCount++;
+                    
+                    // Vérifier si la classe implémente ShouldQueue
+                    if ($mail instanceof \Illuminate\Contracts\Queue\ShouldQueue) {
+                        Mail::to($subscriber->email)->queue($mail);
+                        $queuedCount++;
+                    } else {
+                        Mail::to($subscriber->email)->send($mail);
+                        $sentCount++;
+                    }
                 } catch (\Exception $e) {
                     // Log l'erreur mais continue avec les autres emails
                     \Log::error("Erreur envoi newsletter à {$subscriber->email}: " . $e->getMessage());
                 }
             }
 
-            return back()->with('success', "Newsletter envoyée à {$sentCount} abonné(s).");
+            if ($queuedCount > 0) {
+                return back()->with('success', "Newsletter mise en queue pour {$queuedCount} abonné(s). Les emails seront envoyés automatiquement.");
+            } else {
+                return back()->with('success', "Newsletter envoyée à {$sentCount} abonné(s).");
+            }
         } catch (\Exception $e) {
             return back()->with('error', 'Erreur lors de l\'envoi de la newsletter: ' . $e->getMessage());
         }
