@@ -7,29 +7,29 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\User;
 use App\Models\View;
+use Carbon\Carbon;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // Filtrage par utilisateur si ce n'est pas un admin
-        $userFilter = Auth::user()->is_admin ? [] : ['user_id' => Auth::id()];
+        $user = Auth::user();
         
-        // Récupérer les statistiques pour le dashboard utilisateur
+        // Récupérer les statistiques pour le dashboard
         $stats = [
-            'myPosts' => Post::where($userFilter)->count(),
-            'myViews' => Post::where($userFilter)->sum('views_count'),
-            'myComments' => Comment::when(!Auth::user()->is_admin, function($query) {
-                return $query->whereHas('post', function($q) {
-                    $q->where('user_id', Auth::id());
-                });
+            'myPosts' => $user->is_admin ? Post::count() : Post::where('user_id', $user->id)->count(),
+            'myViews' => $user->is_admin ? Post::sum('views_count') ?? 0 : Post::where('user_id', $user->id)->sum('views_count') ?? 0,
+            'myComments' => $user->is_admin ? Comment::count() : Comment::whereHas('post', function($q) use ($user) {
+                $q->where('user_id', $user->id);
             })->count(),
-            'drafts' => Post::where($userFilter)->where('published', false)->count(),
-            'favoriteCategories' => $this->getTopCategories($userFilter),
-            'recentPosts' => $this->getRecentPosts($userFilter),
-            'activity' => $this->getWeeklyActivity()
+            'drafts' => $user->is_admin ? Post::where('published', false)->count() : Post::where('user_id', $user->id)->where('published', false)->count(),
+            'favoriteCategories' => $this->getTopCategories($user),
+            'recentPosts' => $this->getRecentPosts($user),
+            'activity' => $this->getWeeklyActivity($user)
         ];
     
         return Inertia::render('dashboard', [
@@ -40,11 +40,11 @@ class DashboardController extends Controller
     /**
      * Récupérer les catégories les plus utilisées
      */
-    private function getTopCategories(array $userFilter)
+    private function getTopCategories($user)
     {
-        return Category::withCount(['posts' => function($query) use ($userFilter) {
-                if (!empty($userFilter)) {
-                    $query->where($userFilter);
+        return Category::withCount(['posts' => function($query) use ($user) {
+                if (!$user->is_admin) {
+                    $query->where('user_id', $user->id);
                 }
                 $query->where('published', true);
             }])
@@ -57,16 +57,21 @@ class DashboardController extends Controller
                     'name' => $category->name,
                     'count' => $category->posts_count
                 ];
-            });
+            })->toArray();
     }
     
     /**
      * Récupérer les articles récents avec décompte des commentaires
      */
-    private function getRecentPosts(array $userFilter)
+    private function getRecentPosts($user)
     {
-        return Post::where($userFilter)
-            ->withCount(['comments' => function($query) {
+        $query = Post::query();
+        
+        if (!$user->is_admin) {
+            $query->where('user_id', $user->id);
+        }
+        
+        return $query->withCount(['comments' => function($query) {
                 $query->where('approved', true);
             }])
             ->orderByDesc('created_at')
@@ -81,17 +86,16 @@ class DashboardController extends Controller
                     'views' => $post->views_count ?? 0,
                     'comments_count' => $post->comments_count ?? 0
                 ];
-            });
+            })->toArray();
     }
     
     /**
      * Récupérer l'activité de la semaine
      */
-    private function getWeeklyActivity()
+    private function getWeeklyActivity($user)
     {
         $days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
         $activity = [];
-        $userId = Auth::user()->is_admin ? null : Auth::id();
         
         // Créer une entrée pour chaque jour de la semaine
         for ($i = 6; $i >= 0; $i--) {
@@ -99,29 +103,27 @@ class DashboardController extends Controller
             $dayIndex = $date->dayOfWeek; // 0 (dimanche) à 6 (samedi)
             
             // Compter les posts créés ce jour
-            $postsCount = Post::when($userId, function($query) use($userId) {
-                    return $query->where('user_id', $userId);
-                })
-                ->whereDate('created_at', $date)
-                ->count();
+            $postsQuery = Post::whereDate('created_at', $date);
+            if (!$user->is_admin) {
+                $postsQuery->where('user_id', $user->id);
+            }
+            $postsCount = $postsQuery->count();
                 
             // Compter les commentaires créés ce jour
-            $commentsCount = Comment::when($userId, function($query) use($userId) {
-                    return $query->whereHas('post', function($q) use($userId) {
-                        $q->where('user_id', $userId);
-                    });
-                })
-                ->whereDate('created_at', $date)
-                ->count();
+            $commentsQuery = Comment::whereDate('created_at', $date);
+            if (!$user->is_admin) {
+                $commentsQuery->whereHas('post', function($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                });
+            }
+            $commentsCount = $commentsQuery->count();
                 
-            // Compter les vues enregistrées ce jour
-            $viewsCount = View::when($userId, function($query) use($userId) {
-                    return $query->whereHas('post', function($q) use($userId) {
-                        $q->where('user_id', $userId);
-                    });
-                })
-                ->whereDate('created_at', $date)
-                ->count();
+            // Compter les vues depuis la colonne views_count des posts
+            $viewsQuery = Post::whereDate('updated_at', $date);
+            if (!$user->is_admin) {
+                $viewsQuery->where('user_id', $user->id);
+            }
+            $viewsCount = $viewsQuery->sum('views_count') ?? 0;
                 
             $activity[] = [
                 'date' => $days[$dayIndex],
