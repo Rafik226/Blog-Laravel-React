@@ -4,6 +4,8 @@
     "scripts": {
         "build": "vite build",
         "build:ssr": "vite build && vite build --ssr",
+        "build:prod": "vite build --mode production",
+        "build:prod:ssr": "vite build --mode production && vite build --ssr --mode production",
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",

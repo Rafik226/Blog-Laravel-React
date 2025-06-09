@@ -36,17 +36,13 @@ class SendNewsletterOnNewPost implements ShouldQueue
         $subscribers = Newsletter::active()->get();
         
         foreach ($subscribers as $subscriber) {
-            try {
-                Mail::to($subscriber->email)->send(
-                    new NewsletterMail(
-                        $subject,
-                        $content,
-                        $subscriber->unsubscribe_token
-                    )
-                );
-            } catch (\Exception $e) {
-                \Log::error("Erreur envoi newsletter automatique à {$subscriber->email}: " . $e->getMessage());
-            }
+            Mail::to($subscriber->email)->send(
+                new NewsletterMail(
+                    $subject,
+                    $content,
+                    $subscriber->unsubscribe_token
+                )
+            );
         }
     }
 

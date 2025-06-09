@@ -254,7 +254,6 @@ class NewsletterController extends Controller
             $queuedCount = 0;
 
             foreach ($subscribers as $subscriber) {
-                try {
                     $mail = new NewsletterMail(
                         $validated['subject'],
                         $validated['content'],
@@ -269,10 +268,7 @@ class NewsletterController extends Controller
                         Mail::to($subscriber->email)->send($mail);
                         $sentCount++;
                     }
-                } catch (\Exception $e) {
-                    // Log l'erreur mais continue avec les autres emails
-                    \Log::error("Erreur envoi newsletter à {$subscriber->email}: " . $e->getMessage());
-                }
+              
             }
 
             if ($queuedCount > 0) {
@@ -324,10 +320,6 @@ class NewsletterController extends Controller
 
         try {
             file_put_contents($configPath, $configContent);
-            
-            // Actualiser la configuration en cache
-            \Artisan::call('config:cache');
-            
             return back()->with('success', 'Paramètres de newsletter mis à jour avec succès !');
         } catch (\Exception $e) {
             return back()->with('error', 'Erreur lors de la sauvegarde des paramètres: ' . $e->getMessage());
